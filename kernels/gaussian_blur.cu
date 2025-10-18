@@ -1,6 +1,10 @@
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
 #include <cuda_runtime.h>
+#include "common.h"
+
+// command to compile: nvcc -o gaussian_blur gaussian_blur.cu `pkg-config --cflags --libs opencv4` -diag-suppress 611
+// ./gaussian_blur
 
 using namespace std;
 using namespace cv;
@@ -100,33 +104,33 @@ void gaussianBlurCUDA(const Mat& inputImage, Mat& outputImage, const vector<floa
     cudaFree(d_output);
 }
 
-int main(){
-    Mat inputImage = imread("assets/image1.jpeg", IMREAD_GRAYSCALE);
-    if(inputImage.empty()){
-        cout<<"Could not open or find the image!"<<endl;
-        return -1;
-    }
+// int main(){
+//     Mat inputImage = imread("assets/image1.jpeg", IMREAD_GRAYSCALE);
+//     if(inputImage.empty()){
+//         cout<<"Could not open or find the image!"<<endl;
+//         return -1;
+//     }
 
-    Mat outputImage(inputImage.size(), inputImage.type());
+//     Mat outputImage(inputImage.size(), inputImage.type());
 
-    int width = inputImage.cols;
-    int height = inputImage.rows;
+//     int width = inputImage.cols;
+//     int height = inputImage.rows;
 
-    float sigma = 1.5f;
-    int kernelSize = 3;
+//     float sigma = 1.5f;
+//     int kernelSize = 3;
 
-    vector<float> kernel = generateGaussianKernel(sigma, kernelSize);
+//     vector<float> kernel = generateGaussianKernel(sigma, kernelSize);
 
-    Mat cpuOutput(height, width, CV_8UC1);
-    Mat gpuOutput(height, width, CV_8UC1);
+//     Mat cpuOutput(height, width, CV_8UC1);
+//     Mat gpuOutput(height, width, CV_8UC1);
 
-    gaussianBlurCUDA(inputImage, gpuOutput, kernel);
+//     gaussianBlurCUDA(inputImage, gpuOutput, kernel);
 
-    imwrite("assets/gaussian_blur_image1.png", gpuOutput);
-    imshow("Input Image", inputImage);
-    imshow("Gaussian Blurred Image (CUDA)", gpuOutput);
-    waitKey(0);
-}
+//     imwrite("assets/gaussian_blur_image1.png", gpuOutput);
+//     imshow("Input Image", inputImage);
+//     imshow("Gaussian Blurred Image (CUDA)", gpuOutput);
+//     waitKey(0);
+// }
 // these are the cpp functions i wrote to just learn what to do, the above the kernel implementations of the same
 // vector<float> generateGaussianKernel(float sigma, int kernelSize) {
 //     int kernelRadius = kernelSize / 2;
