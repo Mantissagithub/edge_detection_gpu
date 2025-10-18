@@ -18,5 +18,8 @@ void sobelGradientCUDA(const Mat& inputImage, Mat& gradMag, Mat& gradDir);
 
 void nonMaxSuppressionCUDA(const Mat& gradMag, const Mat& gradDir, Mat& output);
 
+void hysteresisThresholdCUDA(const Mat& nmsInput, Mat& output,
+                             float lowThresh, float highThresh);
+
 #endif // COMMON_H
 
