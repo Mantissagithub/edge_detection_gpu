@@ -54,6 +54,9 @@ for each pixel:
 
 Output files are saved in `kernels/assets/` directory.
 
+### Input Image:
+![Imput Image](kernels/assets/image1.jpeg)
+
 ### CPU Implementation (OpenCV)
 ![CPU Canny Edge Detection](kernels/assets/final_edges_cpu.jpg)
 
