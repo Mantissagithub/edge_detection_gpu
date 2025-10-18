@@ -85,42 +85,42 @@ void sobelGradientCUDA(const Mat& inputImage, Mat& gradMag, Mat& gradDir){
     cudaFree(d_gradDir);
 }
 
-int main(){
-  Mat inputImage = imread("assets/image1.jpeg", IMREAD_GRAYSCALE);
-  if(inputImage.empty()){
-    cout<<"Error loading image"<<endl;
-    return -1;
-  }
+// int main(){
+//   Mat inputImage = imread("assets/image1.jpeg", IMREAD_GRAYSCALE);
+//   if(inputImage.empty()){
+//     cout<<"Error loading image"<<endl;
+//     return -1;
+//   }
 
-  int width = inputImage.cols;
-  int height = inputImage.rows;
+//   int width = inputImage.cols;
+//   int height = inputImage.rows;
 
-  // first, gaussian blur
-  float sigma = 1.5f;
-  int kernelSize = 5;
+//   // first, gaussian blur
+//   float sigma = 1.5f;
+//   int kernelSize = 5;
 
-  vector<float> kernel = generateGaussianKernel(sigma, kernelSize);
+//   vector<float> kernel = generateGaussianKernel(sigma, kernelSize);
 
-  Mat blurredImage(height, width, CV_8UC1);
-  gaussianBlurCUDA(inputImage, blurredImage, kernel);
+//   Mat blurredImage(height, width, CV_8UC1);
+//   gaussianBlurCUDA(inputImage, blurredImage, kernel);
 
-  //second, sobel gradient
-  Mat gradMag(height, width, CV_32FC1);
-  Mat gradDir(height, width, CV_32FC1);
+//   //second, sobel gradient
+//   Mat gradMag(height, width, CV_32FC1);
+//   Mat gradDir(height, width, CV_32FC1);
 
-  sobelGradientCUDA(blurredImage, gradMag, gradDir);
+//   sobelGradientCUDA(blurredImage, gradMag, gradDir);
 
-  // normalize and save results
-  Mat gradMagNorm;
-  normalize(gradMag, gradMagNorm, 0, 255, NORM_MINMAX);
+//   // normalize and save results
+//   Mat gradMagNorm;
+//   normalize(gradMag, gradMagNorm, 0, 255, NORM_MINMAX);
 
-  imshow("Input Image", inputImage);
-  imshow("Blurred Image", blurredImage);
-  imshow("Sobel Gradient Magnitude", gradMagNorm);
+//   imshow("Input Image", inputImage);
+//   imshow("Blurred Image", blurredImage);
+//   imshow("Sobel Gradient Magnitude", gradMagNorm);
 
-  imwrite("assets/blurred_image_cuda.jpg", blurredImage);
-  imwrite("assets/sobel_gradient_magnitude_cuda.jpg", gradMagNorm);
-  waitKey(0);
+//   imwrite("assets/blurred_image_cuda.jpg", blurredImage);
+//   imwrite("assets/sobel_gradient_magnitude_cuda.jpg", gradMagNorm);
+//   waitKey(0);
 
-  return 0;
-}
+//   return 0;
+// }

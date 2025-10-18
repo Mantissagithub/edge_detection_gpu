@@ -14,5 +14,9 @@ vector<float> generateGaussianKernel(float sigma, int kernelSize);
 void gaussianBlurCUDA(const Mat& inputImage, Mat& outputImage,
                       const vector<float>& kernel);
 
+void sobelGradientCUDA(const Mat& inputImage, Mat& gradMag, Mat& gradDir);
+
+void nonMaxSuppressionCUDA(const Mat& gradMag, const Mat& gradDir, Mat& output);
+
 #endif // COMMON_H
 
