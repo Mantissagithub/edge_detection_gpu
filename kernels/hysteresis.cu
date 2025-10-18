@@ -178,11 +178,11 @@ int main(){
   float highThresh = 150.0f;
   hysteresisThresoldCUDA(nmsImage, finalEdges, lowThresh, highThresh);
 
-  imshow("Input Image", inputImage);
-  imshow("Blurred Image", blurredImage);
-  imshow("Sobel Gradient Magnitude", gradMagNorm);
-  imshow("Non-Maximum Suppression Result", nmsImage);
-  imshow("Final Edges after Hysteresis Thresholding", finalEdges);
+  // imshow("Input Image", inputImage);
+  // imshow("Blurred Image", blurredImage);
+  // imshow("Sobel Gradient Magnitude", gradMagNorm);
+  // imshow("Non-Maximum Suppression Result", nmsImage);
+  // imshow("Final Edges after Hysteresis Thresholding", finalEdges);
 
   imwrite("assets/blurred_image_cuda.jpg", blurredImage);
   imwrite("assets/sobel_gradient_magnitude_cuda.jpg", gradMagNorm);
