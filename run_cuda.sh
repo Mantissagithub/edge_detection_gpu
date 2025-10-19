@@ -3,109 +3,180 @@
 set -e
 
 echo "============================================================"
-echo "GPU-based Canny Edge Detection (CUDA)"
+echo "Canny Edge Detection - Performance Comparison"
 echo "============================================================"
 
-cd "$(dirname "$0")/kernels"
-
-OUTPUT_EXEC="canny_cuda"
-
-CUDA_FILES="gaussian_blur.cu sobel.cu nms.cu hysteresis.cu"
-
+BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 NVCC_FLAGS="-O3"
 OPENCV_FLAGS="$(pkg-config --cflags --libs opencv4) -diag-suppress 611"
 
 echo ""
-echo "Starting compilation..."
-echo "------------------------------------------------------------"
+echo "============================================================"
+echo "V1 KERNELS (NAIVE)"
+echo "============================================================"
 
-COMPILE_START=$(date +%s.%N)
+cd "$BASE_DIR/kernels/v1-naive"
 
-nvcc $NVCC_FLAGS $CUDA_FILES $OPENCV_FLAGS -o $OUTPUT_EXEC
+V1_COMPILE_START=$(date +%s.%N)
+nvcc $NVCC_FLAGS gaussian_blur.cu sobel.cu nms.cu hysteresis.cu $OPENCV_FLAGS -o canny_v1
+V1_COMPILE_END=$(date +%s.%N)
+V1_COMPILE_TIME=$(echo "$V1_COMPILE_END - $V1_COMPILE_START" | bc)
 
-COMPILE_END=$(date +%s.%N)
-COMPILE_TIME=$(echo "$COMPILE_END - $COMPILE_START" | bc)
+echo "V1 Compilation: ${V1_COMPILE_TIME}s"
 
-echo "Compilation completed successfully!"
-echo "Compilation time: ${COMPILE_TIME} seconds"
-echo ""
+V1_EXEC_START=$(date +%s.%N)
+./canny_v1
+V1_EXEC_END=$(date +%s.%N)
+V1_EXEC_TIME=$(echo "$V1_EXEC_END - $V1_EXEC_START" | bc)
 
-echo "------------------------------------------------------------"
-echo "Starting execution..."
-echo "------------------------------------------------------------"
+echo "V1 Execution: ${V1_EXEC_TIME}s"
 
-EXEC_START=$(date +%s.%N)
-
-./$OUTPUT_EXEC
-
-EXEC_END=$(date +%s.%N)
-EXEC_TIME=$(echo "$EXEC_END - $EXEC_START" | bc)
-
-echo ""
-echo "Execution completed!"
-echo "------------------------------------------------------------"
-
-TOTAL_TIME=$(echo "$COMPILE_TIME + $EXEC_TIME" | bc)
-
-COMPILE_TIME_MS=$(echo "$COMPILE_TIME * 1000" | bc)
-EXEC_TIME_MS=$(echo "$EXEC_TIME * 1000" | bc)
-TOTAL_TIME_MS=$(echo "$TOTAL_TIME * 1000" | bc)
+V1_TOTAL_TIME=$(echo "$V1_COMPILE_TIME + $V1_EXEC_TIME" | bc)
 
 echo ""
 echo "============================================================"
-echo "TIMING SUMMARY (GPU)"
-echo "============================================================"
-echo "Compilation time: ${COMPILE_TIME} seconds (${COMPILE_TIME_MS} ms)"
-echo "Execution time:   ${EXEC_TIME} seconds (${EXEC_TIME_MS} ms)"
-echo "------------------------------------------------------------"
-echo "Total time (GPU): ${TOTAL_TIME} seconds (${TOTAL_TIME_MS} ms)"
-echo "============================================================"
-echo ""
-echo "GPU Output files saved in kernels/assets/ directory:"
-echo "  - blurred_image_cuda.jpg"
-echo "  - sobel_gradient_magnitude_cuda.jpg"
-echo "  - non_max_suppression_cuda.jpg"
-echo "  - final_edges_hysteresis_cuda.jpg"
+echo "V2 KERNELS (OPTIMIZED)"
 echo "============================================================"
 
-echo ""
-echo ""
-echo "============================================================"
-echo "Running CPU Implementation for Comparison..."
-echo "============================================================"
-echo ""
+cd "$BASE_DIR/kernels/v2"
 
-cd ..
+V2_COMPILE_START=$(date +%s.%N)
+nvcc $NVCC_FLAGS gaussian_blur.cu sobel.cu nms.cu hysteresis.cu $OPENCV_FLAGS -o canny_v2
+V2_COMPILE_END=$(date +%s.%N)
+V2_COMPILE_TIME=$(echo "$V2_COMPILE_END - $V2_COMPILE_START" | bc)
+
+echo "V2 Compilation: ${V2_COMPILE_TIME}s"
+
+V2_EXEC_START=$(date +%s.%N)
+./canny_v2
+V2_EXEC_END=$(date +%s.%N)
+V2_EXEC_TIME=$(echo "$V2_EXEC_END - $V2_EXEC_START" | bc)
+
+echo "V2 Execution: ${V2_EXEC_TIME}s"
+
+V2_TOTAL_TIME=$(echo "$V2_COMPILE_TIME + $V2_EXEC_TIME" | bc)
+
+echo ""
+echo "============================================================"
+echo "CPU (PYTHON + OPENCV)"
+echo "============================================================"
+
+cd "$BASE_DIR"
 
 CPU_START=$(date +%s.%N)
-
 python3 canny_cpu.py
-
 CPU_END=$(date +%s.%N)
 CPU_TIME=$(echo "$CPU_END - $CPU_START" | bc)
-CPU_TIME_MS=$(echo "$CPU_TIME * 1000" | bc)
+
+echo "CPU Execution: ${CPU_TIME}s"
 
 echo ""
-echo ""
 echo "============================================================"
-echo "PERFORMANCE COMPARISON"
+echo "PERFORMANCE SUMMARY"
 echo "============================================================"
-echo "GPU (CUDA):"
-echo "  Compilation:  ${COMPILE_TIME_MS} ms"
-echo "  Execution:    ${EXEC_TIME_MS} ms"
-echo "  Total:        ${TOTAL_TIME_MS} ms"
-echo ""
-echo "CPU (Python + OpenCV):"
-echo "  Execution:    ${CPU_TIME_MS} ms"
+
+V1_COMPILE_MS=$(echo "$V1_COMPILE_TIME * 1000" | bc)
+V1_EXEC_MS=$(echo "$V1_EXEC_TIME * 1000" | bc)
+V1_TOTAL_MS=$(echo "$V1_TOTAL_TIME * 1000" | bc)
+
+V2_COMPILE_MS=$(echo "$V2_COMPILE_TIME * 1000" | bc)
+V2_EXEC_MS=$(echo "$V2_EXEC_TIME * 1000" | bc)
+V2_TOTAL_MS=$(echo "$V2_TOTAL_TIME * 1000" | bc)
+
+CPU_MS=$(echo "$CPU_TIME * 1000" | bc)
+
+printf "%-20s %15s %15s %15s\n" "Implementation" "Compilation" "Execution" "Total"
+echo "------------------------------------------------------------"
+printf "%-20s %15s %15s %15s\n" "V1 (Naive)" "${V1_COMPILE_MS} ms" "${V1_EXEC_MS} ms" "${V1_TOTAL_MS} ms"
+printf "%-20s %15s %15s %15s\n" "V2 (Optimized)" "${V2_COMPILE_MS} ms" "${V2_EXEC_MS} ms" "${V2_TOTAL_MS} ms"
+printf "%-20s %15s %15s %15s\n" "CPU (Python)" "N/A" "${CPU_MS} ms" "${CPU_MS} ms"
 echo "------------------------------------------------------------"
 
-if (( $(echo "$CPU_TIME > 0" | bc -l) )); then
-    SPEEDUP=$(echo "scale=2; $CPU_TIME / $EXEC_TIME" | bc)
-    echo "GPU Speedup: ${SPEEDUP}x faster than CPU"
+echo ""
+echo "SPEEDUP ANALYSIS"
+echo "------------------------------------------------------------"
 
-    IMPROVEMENT=$(echo "scale=2; (($CPU_TIME - $EXEC_TIME) / $CPU_TIME) * 100" | bc)
-    echo "Performance Improvement: ${IMPROVEMENT}% faster"
-else
-    echo "Could not calculate speedup (CPU time is zero)"
+if (( $(echo "$CPU_TIME > 0 && $V1_EXEC_TIME > 0" | bc -l) )); then
+    V1_SPEEDUP=$(echo "scale=2; $CPU_TIME / $V1_EXEC_TIME" | bc)
+    echo "V1 vs CPU: ${V1_SPEEDUP}x"
 fi
+
+if (( $(echo "$CPU_TIME > 0 && $V2_EXEC_TIME > 0" | bc -l) )); then
+    V2_SPEEDUP=$(echo "scale=2; $CPU_TIME / $V2_EXEC_TIME" | bc)
+    echo "V2 vs CPU: ${V2_SPEEDUP}x"
+fi
+
+if (( $(echo "$V1_EXEC_TIME > 0 && $V2_EXEC_TIME > 0" | bc -l) )); then
+    V2_VS_V1=$(echo "scale=2; $V1_EXEC_TIME / $V2_EXEC_TIME" | bc)
+    echo "V2 vs V1: ${V2_VS_V1}x"
+fi
+
+echo "============================================================"
+
+echo ""
+echo ""
+echo "============================================================"
+echo "PURE EXECUTION TIME TEST (NO COMPILATION)"
+echo "============================================================"
+
+echo ""
+echo "Running V1 (Pre-compiled)..."
+cd "$BASE_DIR/kernels/v1-naive"
+V1_PURE_START=$(date +%s.%N)
+./canny_v1
+V1_PURE_END=$(date +%s.%N)
+V1_PURE_TIME=$(echo "$V1_PURE_END - $V1_PURE_START" | bc)
+V1_PURE_MS=$(echo "$V1_PURE_TIME * 1000" | bc)
+echo "V1 Pure Execution: ${V1_PURE_TIME}s (${V1_PURE_MS} ms)"
+
+echo ""
+echo "Running V2 (Pre-compiled)..."
+cd "$BASE_DIR/kernels/v2"
+V2_PURE_START=$(date +%s.%N)
+./canny_v2
+V2_PURE_END=$(date +%s.%N)
+V2_PURE_TIME=$(echo "$V2_PURE_END - $V2_PURE_START" | bc)
+V2_PURE_MS=$(echo "$V2_PURE_TIME * 1000" | bc)
+echo "V2 Pure Execution: ${V2_PURE_TIME}s (${V2_PURE_MS} ms)"
+
+echo ""
+echo "Running CPU (Python)..."
+cd "$BASE_DIR"
+CPU_PURE_START=$(date +%s.%N)
+python3 canny_cpu.py
+CPU_PURE_END=$(date +%s.%N)
+CPU_PURE_TIME=$(echo "$CPU_PURE_END - $CPU_PURE_START" | bc)
+CPU_PURE_MS=$(echo "$CPU_PURE_TIME * 1000" | bc)
+echo "CPU Pure Execution: ${CPU_PURE_TIME}s (${CPU_PURE_MS} ms)"
+
+echo ""
+echo "============================================================"
+echo "PURE EXECUTION COMPARISON"
+echo "============================================================"
+printf "%-20s %20s\n" "Implementation" "Execution Time"
+echo "------------------------------------------------------------"
+printf "%-20s %20s\n" "V1 (Naive)" "${V1_PURE_MS} ms"
+printf "%-20s %20s\n" "V2 (Optimized)" "${V2_PURE_MS} ms"
+printf "%-20s %20s\n" "CPU (Python)" "${CPU_PURE_MS} ms"
+echo "------------------------------------------------------------"
+
+echo ""
+echo "PURE EXECUTION SPEEDUP"
+echo "------------------------------------------------------------"
+
+if (( $(echo "$CPU_PURE_TIME > 0 && $V1_PURE_TIME > 0" | bc -l) )); then
+    V1_PURE_SPEEDUP=$(echo "scale=2; $CPU_PURE_TIME / $V1_PURE_TIME" | bc)
+    echo "V1 vs CPU: ${V1_PURE_SPEEDUP}x"
+fi
+
+if (( $(echo "$CPU_PURE_TIME > 0 && $V2_PURE_TIME > 0" | bc -l) )); then
+    V2_PURE_SPEEDUP=$(echo "scale=2; $CPU_PURE_TIME / $V2_PURE_TIME" | bc)
+    echo "V2 vs CPU: ${V2_PURE_SPEEDUP}x"
+fi
+
+if (( $(echo "$V1_PURE_TIME > 0 && $V2_PURE_TIME > 0" | bc -l) )); then
+    V2_VS_V1_PURE=$(echo "scale=2; $V1_PURE_TIME / $V2_PURE_TIME" | bc)
+    echo "V2 vs V1: ${V2_VS_V1_PURE}x"
+fi
+
 echo "============================================================"

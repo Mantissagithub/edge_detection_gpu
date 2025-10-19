@@ -140,7 +140,14 @@ void hysteresisThresoldCUDA(const Mat& inputImage, Mat& outputImage, float lowTh
 }
 
 int main(){
-  Mat inputImage = imread("assets/image1.jpeg", IMREAD_GRAYSCALE);
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  float kernelTime = 0;
+
+  cudaEventRecord(start);
+
+  Mat inputImage = imread("../assets/image1.jpeg", IMREAD_GRAYSCALE);
   if(inputImage.empty()){
     cout<<"Error loading image"<<endl;
     return -1;
@@ -178,16 +185,25 @@ int main(){
   float highThresh = 150.0f;
   hysteresisThresoldCUDA(nmsImage, finalEdges, lowThresh, highThresh);
 
+  cudaEventRecord(stop);
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&kernelTime, start, stop);
+
+  cout << "Total CUDA kernel execution time: " << kernelTime << " ms" << endl;
+
   // imshow("Input Image", inputImage);
   // imshow("Blurred Image", blurredImage);
   // imshow("Sobel Gradient Magnitude", gradMagNorm);
   // imshow("Non-Maximum Suppression Result", nmsImage);
   // imshow("Final Edges after Hysteresis Thresholding", finalEdges);
 
-  imwrite("assets/blurred_image_cuda.jpg", blurredImage);
-  imwrite("assets/sobel_gradient_magnitude_cuda.jpg", gradMagNorm);
-  imwrite("assets/non_max_suppression_cuda.jpg", nmsImage);
-  imwrite("assets/final_edges_hysteresis_cuda.jpg", finalEdges);
+  imwrite("../assets/blurred_image_cuda.jpg", blurredImage);
+  imwrite("../assets/sobel_gradient_magnitude_cuda.jpg", gradMagNorm);
+  imwrite("../assets/non_max_suppression_cuda.jpg", nmsImage);
+  imwrite("../assets/final_edges_hysteresis_cuda.jpg", finalEdges);
+
+  cudaEventDestroy(start);
+  cudaEventDestroy(stop);
   waitKey(0);
 
   return 0;
